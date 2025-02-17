@@ -8,6 +8,7 @@ function CryptocurrencyCard(props) {
     const percentChange24 = currency.quote.USD.percent_change_24h.toFixed(2);
     const colorChange = percentChange24 >= 0 ? 'text-green-500' : 'text-red-500';
     const marketCap = formatNumber(currency.quote.USD.market_cap);
+    
 
     return (
       <div>
