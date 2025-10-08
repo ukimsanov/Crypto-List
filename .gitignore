@@ -11,6 +11,8 @@ __pycache__/
 .Python
 backend/venv/
 backend/env/
+venv/
+env/
 *.egg-info/
 dist/
 build/
@@ -19,6 +21,7 @@ build/
 frontend/node_modules/
 frontend/dist/
 frontend/build/
+node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -31,6 +34,14 @@ yarn-error.log*
 *.swo
 *~
 .DS_Store
+
+# Temporary files and documentation artifacts
+*.txt
+CLAUDE.md
+SETUP.md
+*ENHANCEMENTS.md
+*QUICK_FIXES.md
+*VISUAL_GUIDE.md
 
 # Logs
 logs/
@@ -48,3 +59,4 @@ htmlcov/
 
 # OS
 Thumbs.db
+.DS_Store
