@@ -1,0 +1,17 @@
+# Core Web Framework
+fastapi==0.115.5
+uvicorn[standard]==0.32.1
+
+# HTTP Client for API calls (CoinMarketCap & CoinGecko)
+aiohttp==3.11.10
+
+# Configuration Management
+python-dotenv==1.0.1
+pydantic==2.10.3
+pydantic-settings==2.6.1
+
+# Caching
+async-lru==2.0.4
+
+# WebSocket client for Binance API
+websockets==14.1
