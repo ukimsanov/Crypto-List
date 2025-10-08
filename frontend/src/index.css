@@ -238,3 +238,44 @@ a, button, input, select, textarea {
 .ant-spin {
   color: var(--color-primary-light);
 }
+
+/* Search input styling */
+.crypto-search .ant-input-affix-wrapper {
+  background: rgba(30, 41, 59, 0.5) !important;
+  border: 1px solid rgba(139, 92, 246, 0.3) !important;
+  border-radius: 12px !important;
+  padding: 12px 16px !important;
+  height: 44px !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.crypto-search .ant-input-affix-wrapper:hover {
+  border-color: rgba(139, 92, 246, 0.5) !important;
+  background: rgba(30, 41, 59, 0.7) !important;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+}
+
+.crypto-search .ant-input-affix-wrapper:focus,
+.crypto-search .ant-input-affix-wrapper-focused {
+  border-color: rgba(139, 92, 246, 0.8) !important;
+  background: rgba(30, 41, 59, 0.8) !important;
+  box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.15) !important;
+}
+
+.crypto-search .ant-input {
+  background: transparent !important;
+  color: #e2e8f0 !important;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px !important;
+}
+
+.crypto-search .ant-input::placeholder {
+  color: #64748b !important;
+  font-weight: 400;
+}
+
+.crypto-search .anticon {
+  color: #a78bfa !important;
+  font-size: 16px;
+}
