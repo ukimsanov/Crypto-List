@@ -1,134 +1,180 @@
-# Crypto Tracker
+# 📊 CryptoLive
 
-A modern, real-time cryptocurrency tracking application with professional TradingView-style charts and live price updates via WebSocket. Built with FastAPI (backend) and React (frontend).
+> A modern, real-time cryptocurrency tracking application with professional TradingView-style charts and live WebSocket price updates.
+
+**[Live Demo](#) • [Features](#-features) • [Tech Stack](#-tech-stack) • [Setup](#-quick-start)**
+
+---
+
+## 🎯 What It Does
+
+CryptoLive provides **real-time cryptocurrency market tracking** with interactive charts and live price updates. Built for traders and crypto enthusiasts who need instant market data visualization.
+
+**Key Capabilities:**
+- 📈 Real-time price streaming via Kraken WebSocket
+- 📉 Interactive TradingView-style candlestick charts
+- 🔍 Search and filter through top cryptocurrencies
+- 📱 Fully responsive design for desktop and mobile
+- ⚡ Flash price notifications (green/red) on updates
+- 🎨 Modern glassmorphic UI with smooth animations
+
+## 🛠️ Built With
+
+**Frontend:** React • Vite • Ant Design • Tailwind CSS • Lightweight Charts  
+**Backend:** Python • FastAPI • WebSockets • Async HTTPX  
+**APIs:** CoinMarketCap • Kraken WebSocket v2 • CoinGecko
 
 ## ✨ Features
 
-### Real-Time Data
-- **Live Price Updates** via Kraken WebSocket API
-- **Instant Price Notifications** with visual flash animations
-- **Real-time Chart Updates** showing the latest price movements
+### 📊 Real-Time Data
+- Live price updates via **Kraken WebSocket API** with sub-second latency
+- Instant visual flash animations (green ↑ / red ↓) on price changes
+- Real-time chart updates showing latest market movements
 
-### Professional Charts
-- **TradingView-Style Candlestick Charts** using lightweight-charts
-- **Multiple Timeframes**: 1m, 5m, 15m, 30m, 1h, 4h, 1D intervals
-- **OHLC Data** from Kraken with proper interval-based candles
-- **Interactive Charts** with zoom, pan, and crosshair features
+### 📈 Professional Charts
+- **TradingView-style candlestick charts** using lightweight-charts library
+- Multiple timeframes: **1m, 5m, 15m, 30m, 1h, 4h, 1D**
+- Interactive features: zoom, pan, crosshair, and price tooltips
+- OHLC (Open, High, Low, Close) data from Kraken
 
-### Modern UI/UX
-- **Glassmorphism Design** with backdrop blur effects
-- **Dark Mode Theme** optimized for crypto trading
-- **Smooth Animations** and hover effects
-- **Responsive Layout** for all screen sizes
-- **High-Quality Coin Images** from CoinGecko API
+### 🎨 Modern UI/UX
+- **Glassmorphism design** with backdrop blur effects
+- Dark theme optimized for extended viewing
+- **Search functionality** to filter cryptocurrencies by name or symbol
+- Responsive layout adapting to all screen sizes
+- Smooth CSS animations and micro-interactions
+- Loading skeletons and error states for better UX
 
-### Data Sources
-- **CoinMarketCap API** for cryptocurrency listings and market data
-- **Kraken WebSocket v2** for real-time price streaming
-- **Kraken OHLC API** for historical candlestick data
-- **CoinGecko API** for high-resolution coin images
+### 📡 Data Integration
+- **CoinMarketCap API** - Market data and cryptocurrency listings
+- **Kraken WebSocket v2** - Real-time price streaming
+- **Kraken OHLC API** - Historical candlestick data
+- **CoinGecko API** - High-resolution coin images
 
-## 🛠️ Prerequisites
-- Python 3.9+
-- Node.js 16+
-- CoinMarketCap API key
-- CoinGecko API key (optional, for better images)
+## � Quick Start
 
-## 🚀 Setup
+### Prerequisites
+```
+Python 3.9+
+Node.js 16+
+CoinMarketCap API key (free tier available)
+CoinGecko API key (optional)
+```
 
-### Backend
+### Installation
 
-1. **Navigate to backend directory**:
-   ```bash
-   cd backend
-   ```
+#### 1️⃣ Backend Setup
 
-2. **Create virtual environment** (recommended):
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On macOS/Linux
-   venv\Scripts\activate     # On Windows
-   ```
+```bash
+cd backend
 
-3. **Install dependencies**:
-   ```bash
-   pip install -r requirements.txt
-   ```
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # macOS/Linux
+# OR: venv\Scripts\activate  (Windows)
 
-4. **Configure environment variables**:
-   Create a `.env` file in the `backend` directory:
-   ```env
-   CMC_API_KEY=your_coinmarketcap_api_key_here
-   COINGECKO_API_KEY=your_coingecko_api_key_here  # Optional
-   ```
+# Install dependencies
+pip install -r requirements.txt
+```
 
-   Get your API keys:
-   - CoinMarketCap: https://coinmarketcap.com/api/
-   - CoinGecko: https://www.coingecko.com/en/api
+Create `.env` file in `backend` directory:
+```env
+CMC_API_KEY=your_coinmarketcap_api_key
+COINGECKO_API_KEY=your_coingecko_api_key  # Optional
+```
 
-5. **Start the backend server**:
-   ```bash
-   uvicorn src.main:app --reload --port 8000
-   ```
-   Backend will run on http://127.0.0.1:8000
+> 🔑 Get API keys: [CoinMarketCap](https://coinmarketcap.com/api/) • [CoinGecko](https://www.coingecko.com/en/api)
 
-### Frontend
+Start the server:
+```bash
+uvicorn src.main:app --reload --port 8000
+```
+✅ Backend running at **http://127.0.0.1:8000**
 
-1. **Navigate to frontend directory**:
-   ```bash
-   cd frontend
-   ```
+#### 2️⃣ Frontend Setup
 
-2. **Install dependencies**:
-   ```bash
-   npm install
-   ```
+```bash
+cd frontend
 
-3. **Start development server**:
-   ```bash
-   npm run dev
-   ```
+# Install dependencies
+npm install
 
-4. **Open in browser**:
-   Navigate to http://localhost:5173
+# Start development server
+npm run dev
+```
+✅ Open **http://localhost:5173** in your browser 🚀
+
+---
 
 ## 🏗️ Tech Stack
 
 ### Backend
-- **FastAPI** - Modern Python web framework
-- **async-lru** - Async LRU cache for API responses
-- **websockets** - WebSocket client for Kraken
-- **httpx** - Async HTTP client
-- **python-dotenv** - Environment variable management
+| Technology | Purpose |
+|------------|---------|
+| **FastAPI** | High-performance Python web framework |
+| **WebSockets** | Real-time bidirectional communication |
+| **async-lru** | Async LRU caching for API optimization |
+| **httpx** | Async HTTP client for external APIs |
 
 ### Frontend
-- **React** - UI framework
-- **Vite** - Build tool and dev server
-- **Ant Design** - UI component library
-- **Tailwind CSS** - Utility-first CSS framework
-- **lightweight-charts** - TradingView charts library
-- **axios** - HTTP client
+| Technology | Purpose |
+|------------|---------|
+| **React 18** | Component-based UI framework |
+| **Vite** | Lightning-fast build tool & dev server |
+| **Ant Design** | Professional UI component library |
+| **Tailwind CSS** | Utility-first styling framework |
+| **lightweight-charts** | TradingView-style charting library |
 
-## 📡 API Endpoints
+---
+
+## 📡 API Documentation
 
 ### REST Endpoints
-- `GET /cryptocurrencies` - List all supported cryptocurrencies
-- `GET /cryptocurrencies/{id}` - Get detailed info for a specific cryptocurrency
-- `GET /cryptocurrencies/{id}/history?interval={minutes}` - Get OHLC candlestick data
-  - Supported intervals: 1, 5, 15, 30, 60, 240, 1440 (minutes)
+```
+GET  /cryptocurrencies              → List all supported cryptocurrencies
+GET  /cryptocurrencies/{id}          → Get detailed cryptocurrency info
+GET  /cryptocurrencies/{id}/history  → Get OHLC candlestick data
+     ?interval={minutes}             → (1, 5, 15, 30, 60, 240, 1440)
+```
 
-### WebSocket Endpoints
-- `WS /ws/prices/{currency_id}` - Real-time price updates via Kraken WebSocket
+### WebSocket
+```
+WS   /ws/prices/{currency_id}       → Real-time price stream from Kraken
+```
 
-## 🎨 UI Features
+---
 
-- **Glassmorphism Sidebar** with frosted glass effect
-- **Gradient Backgrounds** for modern aesthetic
-- **Live Price Flash** - Green for price increases, red for decreases
-- **Smooth Transitions** on all interactive elements
-- **Professional Color Scheme** - Slate, purple, and blue gradients
-- **Custom Scrollbar** styling for better appearance
-- **Hover Effects** with scale transforms and shadow enhancements
+## 🎨 Design Highlights
 
-## 📝 License
-MIT
+- 🌌 **Glassmorphism UI** with frosted glass sidebar and backdrop blur
+- 🌈 **Purple gradient theme** with professional dark mode palette
+- ⚡ **Micro-interactions** - Flash animations on price changes (green ↑ / red ↓)
+- 📱 **Mobile-responsive** with hamburger menu and touch-optimized controls
+- 🔍 **Smart search** - Filter cryptocurrencies by name or symbol
+- 💫 **Smooth animations** - Custom CSS keyframes for all transitions
+- 🎯 **Loading states** - Skeleton screens and error boundaries
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Feel free to:
+- 🐛 Report bugs
+- 💡 Suggest new features
+- 🔧 Submit pull requests
+
+---
+
+## 📄 License
+
+This project is open source and available under the [MIT License](LICENSE).
+
+---
+
+<div align="center">
+
+**Built with ❤️ using React and FastAPI**
+
+⭐ Star this repo if you found it useful!
+
+</div>
