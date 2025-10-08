@@ -33,7 +33,7 @@ const App = () => {
             label: 'Cryptocurrencies',
             type: 'group',
             children: currenciesResponse.map(c => {
-              return {label: c.name, key: c.id, symbol: c.symbol}
+              return {label: `${c.symbol}/USD`, key: c.id, symbol: c.symbol, name: c.name}
             } )
           }
         ]
@@ -58,7 +58,7 @@ const App = () => {
           label: 'Cryptocurrencies',
           type: 'group',
           children: allCurrencies.map(c => {
-            return {label: c.name, key: c.id, symbol: c.symbol}
+            return {label: `${c.symbol}/USD`, key: c.id, symbol: c.symbol, name: c.name}
           })
         }
       ]
@@ -78,7 +78,7 @@ const App = () => {
         label: `Found ${filtered.length} result${filtered.length !== 1 ? 's' : ''}`,
         type: 'group',
         children: filtered.map(c => {
-          return {label: c.name, key: c.id, symbol: c.symbol}
+          return {label: `${c.symbol}/USD`, key: c.id, symbol: c.symbol, name: c.name}
         })
       }
     ]
