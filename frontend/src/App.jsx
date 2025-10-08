@@ -1,13 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { Menu } from 'antd';
-import { MenuOutlined, CloseOutlined, RocketOutlined } from '@ant-design/icons';
+import { Menu, Input } from 'antd';
+import { MenuOutlined, CloseOutlined, RocketOutlined, SearchOutlined } from '@ant-design/icons';
 import axios from 'axios'
 import CryptocurrencyCard from './components/CryptocurrencyCard';
 import SkeletonCard from './components/SkeletonCard';
 import ErrorState from './components/ErrorState';
 
+const { Search } = Input;
+
 const App = () => {
   const [currencies, setCurrencies] = useState([])
+  const [allCurrencies, setAllCurrencies] = useState([]) // Store all currencies for filtering
   const [currencyId, setCurrencyId] = useState(1)
   const [currencyData, setCurrencyData] = useState(null)
   const [prevPrice, setPrevPrice] = useState(null)
@@ -15,6 +18,7 @@ const App = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [error, setError] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [searchQuery, setSearchQuery] = useState('')
 
 
 
@@ -22,13 +26,14 @@ const App = () => {
     axios.get('http://127.0.0.1:8000/cryptocurrencies')
       .then(r => {
         const currenciesResponse = r.data
+        setAllCurrencies(currenciesResponse) // Store all currencies
         const menuItems = [
           {
             key: 'g1',
             label: 'Cryptocurrencies',
             type: 'group',
             children: currenciesResponse.map(c => {
-              return {label: c.name, key: c.id}
+              return {label: c.name, key: c.id, symbol: c.symbol}
             } )
           }
         ]
@@ -39,6 +44,45 @@ const App = () => {
         console.error('Failed to fetch currencies:', err)
         setError('Failed to load cryptocurrency list')
       })
+  }
+
+  // Filter currencies based on search query
+  const filterCurrencies = (query) => {
+    setSearchQuery(query)
+    
+    if (!query.trim()) {
+      // If search is empty, show all currencies
+      const menuItems = [
+        {
+          key: 'g1',
+          label: 'Cryptocurrencies',
+          type: 'group',
+          children: allCurrencies.map(c => {
+            return {label: c.name, key: c.id, symbol: c.symbol}
+          })
+        }
+      ]
+      setCurrencies(menuItems)
+      return
+    }
+
+    // Filter currencies by name or symbol
+    const filtered = allCurrencies.filter(c => 
+      c.name.toLowerCase().includes(query.toLowerCase()) ||
+      c.symbol.toLowerCase().includes(query.toLowerCase())
+    )
+
+    const menuItems = [
+      {
+        key: 'g1',
+        label: `Found ${filtered.length} result${filtered.length !== 1 ? 's' : ''}`,
+        type: 'group',
+        children: filtered.map(c => {
+          return {label: c.name, key: c.id, symbol: c.symbol}
+        })
+      }
+    ]
+    setCurrencies(menuItems)
   }
 
   const fetchCurrency = () => {
@@ -196,6 +240,23 @@ const App = () => {
             <span className='text-green-400 font-semibold'>Live via Kraken</span>
           </div>
         </div>
+        
+        {/* Search Input */}
+        <div className='p-4'>
+          <Input
+            placeholder="Search cryptocurrencies..."
+            value={searchQuery}
+            onChange={(e) => filterCurrencies(e.target.value)}
+            prefix={<SearchOutlined style={{ color: '#a78bfa' }} />}
+            className='crypto-search'
+            style={{
+              background: 'rgba(30, 41, 59, 0.5)',
+              borderColor: 'rgba(139, 92, 246, 0.3)',
+              color: '#e2e8f0'
+            }}
+          />
+        </div>
+        
         <Menu
           onClick={onClick}
           style={{
@@ -206,7 +267,7 @@ const App = () => {
           defaultSelectedKeys={['1']}
           mode="inline"
           items={currencies}
-          className='h-[calc(100vh-160px)] overflow-y-auto crypto-menu'
+          className='h-[calc(100vh-230px)] overflow-y-auto crypto-menu'
         />
       </div>
 
