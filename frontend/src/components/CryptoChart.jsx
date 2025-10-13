@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createChart, CandlestickSeries } from 'lightweight-charts';
 import axios from 'axios';
+import { API_URL, WS_URL } from '../config';
 
 /**
  * TradingView-style cryptocurrency chart component
@@ -34,7 +35,7 @@ function CryptoChart({ currencyId, symbol, name }) {
       setLoading(true);
       try {
         const response = await axios.get(
-          `http://127.0.0.1:8000/cryptocurrencies/${currencyId}/history`,
+          `${API_URL}/cryptocurrencies/${currencyId}/history`,
           { params: { interval: timeframe } }
         );
 
@@ -190,7 +191,7 @@ function CryptoChart({ currencyId, symbol, name }) {
 
     console.log(`🔄 Connecting to Kraken WebSocket for live chart updates: ${symbol}`);
 
-    const ws = new WebSocket(`ws://127.0.0.1:8000/ws/prices/${currencyId}`);
+    const ws = new WebSocket(`${WS_URL}/ws/prices/${currencyId}`);
     wsRef.current = ws;
 
     ws.onopen = () => {
