@@ -114,7 +114,7 @@ const App = () => {
 
   // Real-time price updates using Kraken WebSocket
   useEffect(() => {
-    setCurrencyData(null)
+    // Don't clear currencyData immediately to prevent blink
     setPrevPrice(null)
     setPrevCurrencyId(null)
     setError(null)
