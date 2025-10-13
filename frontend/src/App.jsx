@@ -5,6 +5,7 @@ import axios from 'axios'
 import CryptocurrencyCard from './components/CryptocurrencyCard';
 import SkeletonCard from './components/SkeletonCard';
 import ErrorState from './components/ErrorState';
+import { API_URL, WS_URL } from './config';
 
 const { Search } = Input;
 
@@ -23,7 +24,7 @@ const App = () => {
 
 
   const fetchCurrencies = () => {
-    axios.get('http://127.0.0.1:8000/cryptocurrencies')
+    axios.get(`${API_URL}/cryptocurrencies`)
       .then(r => {
         const currenciesResponse = r.data
         setAllCurrencies(currenciesResponse) // Store all currencies
@@ -88,7 +89,7 @@ const App = () => {
   const fetchCurrency = () => {
     setIsLoading(true)
     // Fetch full currency data from CoinMarketCap
-    axios.get(`http://127.0.0.1:8000/cryptocurrencies/${currencyId}`)
+    axios.get(`${API_URL}/cryptocurrencies/${currencyId}`)
       .then(r => {
         setCurrencyData(r.data)
         setError(null)
@@ -124,7 +125,7 @@ const App = () => {
     fetchCurrency()
 
     // Connect to Kraken WebSocket
-    const ws = new WebSocket(`ws://127.0.0.1:8000/ws/prices/${currencyId}`)
+    const ws = new WebSocket(`${WS_URL}/ws/prices/${currencyId}`)
 
     ws.onopen = () => {
       console.log(`✅ WebSocket connected (Kraken) for currency ID: ${currencyId}`)
