@@ -20,6 +20,7 @@ const App = () => {
   const [error, setError] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
+  const [coldStartLoading, setColdStartLoading] = useState(true)
 
 
 
@@ -40,10 +41,14 @@ const App = () => {
         ]
         setCurrencies(menuItems)
         setError(null)
+        // Connection established, hide cold start screen
+        setColdStartLoading(false)
       })
       .catch(err => {
         console.error('Failed to fetch currencies:', err)
         setError('Failed to load cryptocurrency list')
+        // Even on error, hide cold start screen after attempt
+        setColdStartLoading(false)
       })
   }
 
@@ -110,6 +115,15 @@ const App = () => {
 
   useEffect(() => {
     fetchCurrencies()
+  }, [])
+
+  // Cold start loading screen - maximum 10 seconds as fallback
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setColdStartLoading(false)
+    }, 10000) // 10 seconds maximum fallback
+
+    return () => clearTimeout(timer)
   }, [])
 
   // Real-time price updates using Kraken WebSocket
@@ -201,6 +215,39 @@ const App = () => {
     setMobileMenuOpen(false) // Close mobile menu on selection
   };
 
+
+  // Cold start loading screen
+  if (coldStartLoading) {
+    return (
+      <div className='flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950 relative overflow-hidden'>
+        {/* Animated background elements */}
+        <div className='absolute inset-0 overflow-hidden pointer-events-none'>
+          <div className='absolute top-0 left-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse'></div>
+          <div className='absolute bottom-0 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse' style={{ animationDelay: '1s' }}></div>
+          <div className='absolute top-1/2 left-1/2 w-96 h-96 bg-violet-500/10 rounded-full blur-3xl animate-pulse' style={{ animationDelay: '2s' }}></div>
+        </div>
+
+        {/* Loading content */}
+        <div className='relative z-10 text-center px-6'>
+          <div className='w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-purple-500 to-blue-600 flex items-center justify-center shadow-2xl animate-pulse'>
+            <RocketOutlined className='text-white text-4xl' />
+          </div>
+          <h1 className='text-4xl font-extrabold bg-gradient-to-r from-purple-400 via-violet-400 to-blue-400 bg-clip-text text-transparent mb-4'>
+            CryptoLive
+          </h1>
+          <p className='text-slate-300 text-lg font-medium mb-2'>Waking up the server...</p>
+          <p className='text-slate-500 text-sm'>This may take up to 10 seconds</p>
+
+          {/* Loading dots animation */}
+          <div className='flex justify-center gap-2 mt-6'>
+            <div className='w-3 h-3 bg-purple-500 rounded-full animate-bounce' style={{ animationDelay: '0s' }}></div>
+            <div className='w-3 h-3 bg-violet-500 rounded-full animate-bounce' style={{ animationDelay: '0.2s' }}></div>
+            <div className='w-3 h-3 bg-blue-500 rounded-full animate-bounce' style={{ animationDelay: '0.4s' }}></div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className='flex min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950 relative overflow-hidden'>
