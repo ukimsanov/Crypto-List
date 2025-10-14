@@ -21,6 +21,7 @@ const App = () => {
   const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [coldStartLoading, setColdStartLoading] = useState(true)
+  const [loadingSeconds, setLoadingSeconds] = useState(0)
 
 
 
@@ -117,14 +118,16 @@ const App = () => {
     fetchCurrencies()
   }, [])
 
-  // Cold start loading screen - maximum 10 seconds as fallback
+  // Timer for cold start loading screen
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setColdStartLoading(false)
-    }, 10000) // 10 seconds maximum fallback
+    if (coldStartLoading) {
+      const interval = setInterval(() => {
+        setLoadingSeconds(prev => prev + 1)
+      }, 1200)
 
-    return () => clearTimeout(timer)
-  }, [])
+      return () => clearInterval(interval)
+    }
+  }, [coldStartLoading])
 
   // Real-time price updates using Kraken WebSocket
   useEffect(() => {
@@ -236,7 +239,13 @@ const App = () => {
             CryptoLive
           </h1>
           <p className='text-slate-300 text-lg font-medium mb-2'>Waking up the server...</p>
-          <p className='text-slate-500 text-sm'>This may take up to 10 seconds</p>
+
+          {/* Timer display */}
+          <div className='text-6xl font-bold text-white my-6'>
+            {loadingSeconds}s
+          </div>
+
+          <p className='text-slate-500 text-sm'>Waiting for server response...</p>
 
           {/* Loading dots animation */}
           <div className='flex justify-center gap-2 mt-6'>
