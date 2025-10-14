@@ -13,6 +13,7 @@ CryptoLive provides **real-time cryptocurrency market tracking** with interactiv
 **Key Capabilities:**
 - 📈 Real-time price streaming via Kraken WebSocket
 - 📉 Interactive TradingView-style candlestick charts
+- ✏️ Drawing tools for technical analysis (trend lines, support/resistance)
 - 🔍 Search and filter through top cryptocurrencies
 - 📱 Fully responsive design for desktop and mobile
 - ⚡ Flash price notifications (green/red) on updates
@@ -36,6 +37,12 @@ CryptoLive provides **real-time cryptocurrency market tracking** with interactiv
 - Multiple timeframes: **1m, 5m, 15m, 30m, 1h, 4h, 1D**
 - Interactive features: zoom, pan, crosshair, and price tooltips
 - OHLC (Open, High, Low, Close) data from Kraken
+- **Drawing tools** for technical analysis:
+  - 📏 Horizontal lines for price levels
+  - 📐 Trend lines with adjustable anchor points
+  - 📍 Vertical lines for time markers
+  - ✏️ Drag and resize drawings with mouse
+  - 💾 Auto-save to localStorage (persistent across sessions)
 
 ### 🎨 Modern UI/UX
 - **Glassmorphism design** with backdrop blur effects
