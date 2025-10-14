@@ -21,12 +21,30 @@ function CryptoChart({ currencyId, symbol, name }) {
 
   // Drawing tools state
   const [drawingMode, setDrawingMode] = useState(null); // 'horizontal', 'trendline', 'vertical', null
-  const [drawings, setDrawings] = useState([]);
+  const [drawings, setDrawings] = useState(() => {
+    // Load drawings from localStorage on component mount
+    const storageKey = `crypto-chart-drawings-${symbol}-${timeframe}`;
+    try {
+      const savedDrawings = localStorage.getItem(storageKey);
+      return savedDrawings ? JSON.parse(savedDrawings) : [];
+    } catch (e) {
+      console.error('Error loading drawings from localStorage:', e);
+      return [];
+    }
+  });
   const [tempDrawing, setTempDrawing] = useState(null);
   const drawingLayerRef = useRef(null);
   const priceLineRefsRef = useRef([]); // Store price line references
   const [svgDrawings, setSvgDrawings] = useState([]); // For rendering SVG lines
   const [mousePosition, setMousePosition] = useState(null); // Track mouse for preview
+
+  // Moveable drawings state
+  const [selectedDrawing, setSelectedDrawing] = useState(null); // ID of selected drawing
+  const [hoveredDrawing, setHoveredDrawing] = useState(null); // ID of hovered drawing
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState(null); // {x, y, time, price, originalDrawing}
+  const [dragAnchor, setDragAnchor] = useState(null); // 'point1', 'point2', or 'body' for trend lines
+  const [hoveredAnchor, setHoveredAnchor] = useState(null); // {drawingId, anchor} for hover effect
 
   // Timeframe options with Kraken intervals (in minutes)
   const timeframes = [
@@ -407,7 +425,14 @@ function CryptoChart({ currencyId, symbol, name }) {
     console.log('🎨 Rendering', drawings.length, 'drawings on chart (version:', chartVersion + ')');
 
     // Clear all existing price lines (for horizontal lines)
-    priceLineRefsRef.current = []; // Clear refs (old series is already destroyed)
+    priceLineRefsRef.current.forEach(priceLine => {
+      try {
+        seriesRef.current.removePriceLine(priceLine);
+      } catch (e) {
+        console.error('Error removing price line:', e);
+      }
+    });
+    priceLineRefsRef.current = [];
 
     // Create new price lines for all horizontal drawings
     drawings.forEach(drawing => {
@@ -429,7 +454,7 @@ function CryptoChart({ currencyId, symbol, name }) {
       }
     });
 
-    // Convert trend lines and vertical lines to SVG coordinates
+    // Convert trend lines, vertical lines, and horizontal lines to SVG coordinates
     const svgLines = [];
 
     drawings.forEach(drawing => {
@@ -475,6 +500,25 @@ function CryptoChart({ currencyId, symbol, name }) {
         } catch (e) {
           console.error('Error rendering vertical line:', e);
         }
+      } else if (drawing.type === 'horizontal' && drawing.price) {
+        try {
+          // For horizontal lines, also add SVG overlay for dragging
+          const y = seriesRef.current.priceToCoordinate(drawing.price);
+
+          if (y !== null && chartContainerRef.current) {
+            svgLines.push({
+              id: drawing.id,
+              type: 'horizontal',
+              y,
+              width: chartContainerRef.current.clientWidth,
+              color: drawing.color,
+              price: drawing.price
+            });
+            console.log('✅ Rendered horizontal line overlay at price:', drawing.price, 'y:', y);
+          }
+        } catch (e) {
+          console.error('Error rendering horizontal line overlay:', e);
+        }
       }
     });
 
@@ -518,6 +562,21 @@ function CryptoChart({ currencyId, symbol, name }) {
                 x,
                 height: chartContainerRef.current.clientHeight,
                 color: drawing.color
+              });
+            }
+          } catch (e) {}
+        } else if (drawing.type === 'horizontal' && drawing.price) {
+          try {
+            const y = seriesRef.current.priceToCoordinate(drawing.price);
+
+            if (y !== null && chartContainerRef.current) {
+              svgLines.push({
+                id: drawing.id,
+                type: 'horizontal',
+                y,
+                width: chartContainerRef.current.clientWidth,
+                color: drawing.color,
+                price: drawing.price
               });
             }
           } catch (e) {}
@@ -682,6 +741,144 @@ function CryptoChart({ currencyId, symbol, name }) {
       container.removeEventListener('click', handleContainerClick);
     };
   }, [drawingMode, tempDrawing, drawings]);
+
+  // Deselect drawing when clicking on chart background
+  useEffect(() => {
+    if (!chartContainerRef.current) return;
+
+    const handleChartBackgroundClick = (e) => {
+      // If click is directly on the chart container (not on a drawing), deselect
+      if (e.target === chartContainerRef.current || e.target.closest('.tv-lightweight-charts')) {
+        if (!drawingMode) {
+          setSelectedDrawing(null);
+        }
+      }
+    };
+
+    const container = chartContainerRef.current;
+    container.addEventListener('click', handleChartBackgroundClick);
+
+    return () => {
+      container.removeEventListener('click', handleChartBackgroundClick);
+    };
+  }, [drawingMode]);
+
+  // Handle dragging of drawings
+  useEffect(() => {
+    if (!isDragging || !dragStart || !chartRef.current || !seriesRef.current || !chartContainerRef.current) return;
+
+    const handleMouseMove = (e) => {
+      if (!chartRef.current || !seriesRef.current || !chartContainerRef.current) return;
+
+      const rect = chartContainerRef.current.getBoundingClientRect();
+      const currentX = e.clientX - rect.left;
+      const currentY = e.clientY - rect.top;
+
+      // Find the drawing being dragged
+      const drawingIndex = drawings.findIndex(d => d.id === selectedDrawing);
+      if (drawingIndex === -1) return;
+
+      const drawing = drawings[drawingIndex];
+
+      // Handle different drawing types
+      if (drawing.type === 'vertical') {
+        // Convert current mouse X to time
+        const newTime = chartRef.current.timeScale().coordinateToTime(currentX);
+
+        if (newTime) {
+          // Update the drawing with new time
+          const updatedDrawings = [...drawings];
+          updatedDrawings[drawingIndex] = {
+            ...drawing,
+            time: newTime
+          };
+          setDrawings(updatedDrawings);
+        }
+      } else if (drawing.type === 'trendline') {
+        if (dragAnchor === 'body') {
+          // Move entire trend line - both points move together
+          const newTime = chartRef.current.timeScale().coordinateToTime(currentX);
+          const newPrice = seriesRef.current.coordinateToPrice(currentY);
+
+          if (newTime && newPrice && dragStart.originalDrawing) {
+            // Calculate deltas from original drag start position
+            const timeDelta = newTime - dragStart.time;
+            const priceDelta = newPrice - dragStart.price;
+
+            // Apply deltas to original points (not current points)
+            const originalDrawing = dragStart.originalDrawing;
+            const updatedDrawings = [...drawings];
+            updatedDrawings[drawingIndex] = {
+              ...drawing,
+              point1: {
+                time: originalDrawing.point1.time + timeDelta,
+                price: originalDrawing.point1.price + priceDelta
+              },
+              point2: {
+                time: originalDrawing.point2.time + timeDelta,
+                price: originalDrawing.point2.price + priceDelta
+              }
+            };
+            setDrawings(updatedDrawings);
+          }
+        } else if (dragAnchor === 'point1' || dragAnchor === 'point2') {
+          // Move one anchor point to resize/reposition
+          const newTime = chartRef.current.timeScale().coordinateToTime(currentX);
+          const newPrice = seriesRef.current.coordinateToPrice(currentY);
+
+          if (newTime && newPrice) {
+            const updatedDrawings = [...drawings];
+            updatedDrawings[drawingIndex] = {
+              ...drawing,
+              [dragAnchor]: {
+                time: newTime,
+                price: newPrice
+              }
+            };
+            setDrawings(updatedDrawings);
+          }
+        }
+      } else if (drawing.type === 'horizontal') {
+        // Move horizontal line - only price changes
+        const newPrice = seriesRef.current.coordinateToPrice(currentY);
+
+        if (newPrice) {
+          const updatedDrawings = [...drawings];
+          updatedDrawings[drawingIndex] = {
+            ...drawing,
+            price: newPrice
+          };
+          setDrawings(updatedDrawings);
+        }
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+      setDragStart(null);
+      setDragAnchor(null);
+      console.log('Finished dragging');
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging, dragStart, dragAnchor, drawings, selectedDrawing]);
+
+  // Save drawings to localStorage whenever they change
+  useEffect(() => {
+    const storageKey = `crypto-chart-drawings-${symbol}-${timeframe}`;
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(drawings));
+      console.log(`💾 Saved ${drawings.length} drawings to localStorage for ${symbol} ${timeframe}m`);
+    } catch (e) {
+      console.error('Error saving drawings to localStorage:', e);
+    }
+  }, [drawings, symbol, timeframe]);
 
   return (
     <div style={{ width: '100%', minHeight: '550px' }}>
@@ -1097,34 +1294,260 @@ function CryptoChart({ currencyId, symbol, name }) {
             left: 0,
             width: '100%',
             height: '100%',
-            pointerEvents: 'none',
+            pointerEvents: 'none', // Always pass through to allow chart panning/zooming
             zIndex: 5
           }}
         >
           {svgDrawings.map(drawing => {
+            const isSelected = selectedDrawing === drawing.id;
+            const isHovered = hoveredDrawing === drawing.id;
+            const showAnchors = isSelected || isHovered; // Show anchors on hover or selection
+
             if (drawing.type === 'line') {
+              // Find the original drawing data for this SVG line
+              const originalDrawing = drawings.find(d => d.id === drawing.id);
+
               return (
-                <line
-                  key={drawing.id}
-                  x1={drawing.x1}
-                  y1={drawing.y1}
-                  x2={drawing.x2}
-                  y2={drawing.y2}
-                  stroke={drawing.color}
-                  strokeWidth={2}
-                />
+                <g key={drawing.id}>
+                  {/* Invisible wider hitbox for easier clicking */}
+                  <line
+                    x1={drawing.x1}
+                    y1={drawing.y1}
+                    x2={drawing.x2}
+                    y2={drawing.y2}
+                    stroke="transparent"
+                    strokeWidth={20}
+                    style={{
+                      cursor: isDragging && selectedDrawing === drawing.id ? 'grabbing' : 'pointer',
+                      pointerEvents: 'auto'
+                    }}
+                    onMouseEnter={() => setHoveredDrawing(drawing.id)}
+                    onMouseLeave={() => setHoveredDrawing(null)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedDrawing(drawing.id);
+                      console.log('Selected trend line:', drawing.id);
+                    }}
+                    onMouseDown={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+
+                      if (!originalDrawing) return;
+
+                      // Get current mouse position in chart coordinates
+                      const rect = chartContainerRef.current.getBoundingClientRect();
+                      const x = e.clientX - rect.left;
+                      const y = e.clientY - rect.top;
+
+                      const time = chartRef.current.timeScale().coordinateToTime(x);
+                      const price = seriesRef.current.coordinateToPrice(y);
+
+                      setSelectedDrawing(drawing.id);
+                      setIsDragging(true);
+                      setDragStart({
+                        x: e.clientX,
+                        y: e.clientY,
+                        time: time,
+                        price: price,
+                        originalDrawing: { ...originalDrawing }
+                      });
+                      setDragAnchor('body');
+                      console.log('Started dragging trend line body:', drawing.id);
+                    }}
+                  />
+                  {/* Visible line */}
+                  <line
+                    x1={drawing.x1}
+                    y1={drawing.y1}
+                    x2={drawing.x2}
+                    y2={drawing.y2}
+                    stroke={drawing.color}
+                    strokeWidth={2}
+                    pointerEvents="none"
+                  />
+                  {/* Anchor points when selected or hovered */}
+                  {showAnchors && (
+                    <>
+                      {/* First anchor point */}
+                      <circle
+                        cx={drawing.x1}
+                        cy={drawing.y1}
+                        r={hoveredAnchor?.drawingId === drawing.id && hoveredAnchor?.anchor === 'point1' ? 7 : 6}
+                        fill="#ffffff"
+                        stroke="#2962ff"
+                        strokeWidth={2}
+                        style={{
+                          cursor: 'default',
+                          pointerEvents: 'auto',
+                          transition: 'r 0.15s ease'
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          console.log('Clicked point1 anchor');
+                        }}
+                        onMouseEnter={() => setHoveredAnchor({ drawingId: drawing.id, anchor: 'point1' })}
+                        onMouseLeave={() => setHoveredAnchor(null)}
+                        onMouseDown={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+
+                          if (!originalDrawing) return;
+
+                          setSelectedDrawing(drawing.id);
+                          setIsDragging(true);
+                          setDragStart({
+                            x: e.clientX,
+                            y: e.clientY,
+                            time: originalDrawing.point1.time,
+                            price: originalDrawing.point1.price,
+                            originalDrawing: { ...originalDrawing }
+                          });
+                          setDragAnchor('point1');
+                          console.log('Started dragging point1 anchor:', drawing.id);
+                        }}
+                      />
+                      {/* Second anchor point */}
+                      <circle
+                        cx={drawing.x2}
+                        cy={drawing.y2}
+                        r={hoveredAnchor?.drawingId === drawing.id && hoveredAnchor?.anchor === 'point2' ? 7 : 6}
+                        fill="#ffffff"
+                        stroke="#2962ff"
+                        strokeWidth={2}
+                        style={{
+                          cursor: 'default',
+                          pointerEvents: 'auto',
+                          transition: 'r 0.15s ease'
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          console.log('Clicked point2 anchor');
+                        }}
+                        onMouseEnter={() => setHoveredAnchor({ drawingId: drawing.id, anchor: 'point2' })}
+                        onMouseLeave={() => setHoveredAnchor(null)}
+                        onMouseDown={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+
+                          if (!originalDrawing) return;
+
+                          setSelectedDrawing(drawing.id);
+                          setIsDragging(true);
+                          setDragStart({
+                            x: e.clientX,
+                            y: e.clientY,
+                            time: originalDrawing.point2.time,
+                            price: originalDrawing.point2.price,
+                            originalDrawing: { ...originalDrawing }
+                          });
+                          setDragAnchor('point2');
+                          console.log('Started dragging point2 anchor:', drawing.id);
+                        }}
+                      />
+                    </>
+                  )}
+                </g>
               );
             } else if (drawing.type === 'vertical') {
               return (
-                <line
-                  key={drawing.id}
-                  x1={drawing.x}
-                  y1={0}
-                  x2={drawing.x}
-                  y2={drawing.height}
-                  stroke={drawing.color}
-                  strokeWidth={2}
-                />
+                <g key={drawing.id}>
+                  {/* Invisible wider hitbox */}
+                  <line
+                    x1={drawing.x}
+                    y1={0}
+                    x2={drawing.x}
+                    y2={drawing.height}
+                    stroke="transparent"
+                    strokeWidth={20}
+                    style={{
+                      cursor: isDragging && selectedDrawing === drawing.id ? 'grabbing' : 'pointer',
+                      pointerEvents: 'auto'
+                    }}
+                    onMouseEnter={() => setHoveredDrawing(drawing.id)}
+                    onMouseLeave={() => setHoveredDrawing(null)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedDrawing(drawing.id);
+                      console.log('Selected vertical line:', drawing.id);
+                    }}
+                    onMouseDown={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+
+                      // Find the original drawing data
+                      const originalDrawing = drawings.find(d => d.id === drawing.id);
+                      if (!originalDrawing) return;
+
+                      setSelectedDrawing(drawing.id);
+                      setIsDragging(true);
+                      setDragStart({
+                        x: e.clientX,
+                        y: e.clientY,
+                        time: originalDrawing.time,
+                        price: null,
+                        originalDrawing: { ...originalDrawing }
+                      });
+                      setDragAnchor('body');
+                      console.log('Started dragging vertical line:', drawing.id);
+                    }}
+                  />
+                  {/* Visible line */}
+                  <line
+                    x1={drawing.x}
+                    y1={0}
+                    x2={drawing.x}
+                    y2={drawing.height}
+                    stroke={drawing.color}
+                    strokeWidth={2}
+                    pointerEvents="none"
+                  />
+                </g>
+              );
+            } else if (drawing.type === 'horizontal') {
+              // Find the original drawing data
+              const originalDrawing = drawings.find(d => d.id === drawing.id);
+
+              return (
+                <g key={drawing.id}>
+                  {/* Invisible wider hitbox for easier clicking */}
+                  <line
+                    x1={0}
+                    y1={drawing.y}
+                    x2={drawing.width}
+                    y2={drawing.y}
+                    stroke="transparent"
+                    strokeWidth={20}
+                    style={{
+                      cursor: isDragging && selectedDrawing === drawing.id ? 'grabbing' : 'pointer',
+                      pointerEvents: 'auto'
+                    }}
+                    onMouseEnter={() => setHoveredDrawing(drawing.id)}
+                    onMouseLeave={() => setHoveredDrawing(null)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedDrawing(drawing.id);
+                      console.log('Selected horizontal line:', drawing.id);
+                    }}
+                    onMouseDown={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+
+                      if (!originalDrawing) return;
+
+                      setSelectedDrawing(drawing.id);
+                      setIsDragging(true);
+                      setDragStart({
+                        x: e.clientX,
+                        y: e.clientY,
+                        time: null,
+                        price: originalDrawing.price,
+                        originalDrawing: { ...originalDrawing }
+                      });
+                      setDragAnchor('body');
+                      console.log('Started dragging horizontal line:', drawing.id);
+                    }}
+                  />
+                </g>
               );
             }
             return null;
