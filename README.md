@@ -2,7 +2,7 @@
 
 > A modern, real-time cryptocurrency tracking application with professional TradingView-style charts and live WebSocket price updates.
 
-**[Live Demo](#) • [Features](#-features) • [Tech Stack](#-tech-stack) • [Setup](#-quick-start)**
+**[Live Demo](https://crypto-live-omega.vercel.app) • [Features](#-features) • [Tech Stack](#-tech-stack) • [Setup](#-quick-start)**
 
 ---
 

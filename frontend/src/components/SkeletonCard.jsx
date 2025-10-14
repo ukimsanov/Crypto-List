@@ -9,12 +9,14 @@ function SkeletonCard() {
   return (
     <Card
       className="crypto-card animate-fade-in"
-      headStyle={{
-        padding: '20px 24px',
-        borderBottom: '1px solid rgba(148, 163, 184, 0.1)',
-      }}
-      bodyStyle={{
-        padding: '24px',
+      styles={{
+        header: {
+          padding: '20px 24px',
+          borderBottom: '1px solid rgba(148, 163, 184, 0.1)',
+        },
+        body: {
+          padding: '24px',
+        }
       }}
       style={{
         background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 27, 75, 0.95) 100%)',
